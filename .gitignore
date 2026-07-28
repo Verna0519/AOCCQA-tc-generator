@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Packaged skills (build artifacts)
+*.skill
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Excel temp lock files
+~$*.xlsx
+
+# Local export output
+out/
+outputs/
