@@ -21,7 +21,7 @@ description: >
 
 隸屬 Agent:`AOCCQA-testcase-drafter`(案例起草員)。把上游**已確認的需求**展開成一份**可執行、可追溯、不重複**的 Test Case Draft。把「測試設計」當主要工作 —— **不是**把每條需求逐字翻成一列表格。
 
-**上游**:`aoccqa-fsd-parser`(需求分析報告 / Requirement Matrix)。**下游**:`aoccqa-quality-reviewer`(審查、刪重、補漏)→ `aoccqa-case-exporter`(輸出 XLSX／HTML)。
+**上游**:`aoccqa-fsd-parser`(需求分析報告 / Requirement Matrix)。**下游**:`aoccqa-quality-reviewer`(審查、刪重、補漏)→ `aoccqa-case-exporter`(輸出 XLSX)。
 
 **通用性**:與「哪個產品／哪份需求」無關;流程與 7 欄輸出結構固定;所有專有名詞(欄位、狀態、系統、product type、國家、API、Job 名)**一律取自當前這份需求**,不沿用其他文件或本 skill 範例的詞彙(範例僅示意寫法)。
 
@@ -213,7 +213,7 @@ description: >
 
 ## 版本紀錄
 
-- **v1.4.1**:文件校正(行為不變)——① 修正對 `case-exporter` 的過時描述:exporter v1.1.0+ **已支援** `Test Data` 條件寫入 L 欄(舊文誤稱「留白、需另調整」),且 exporter 除 5 個內容欄外還會寫 `Test Case ID`(A,沿用來源、缺才順編)(舊文誤稱「只抓 5 欄、ID 由 exporter 自動順編」);② 下游 reviewer 名稱由 `aoccqa-testcase-reviewer` 更正為實際的 `aoccqa-quality-reviewer`。
+- **v1.4.1**:文件校正(行為不變)——① 修正對 `case-exporter` 的過時描述:exporter v1.1.0+ **已支援** `Test Data` 條件寫入 L 欄(舊文誤稱「留白、需另調整」),且 exporter 除 5 個內容欄外還會寫 `Test Case ID`(A,沿用來源、缺才順編)(舊文誤稱「只抓 5 欄、ID 由 exporter 自動順編」);② 下游 reviewer 名稱由 `aoccqa-testcase-reviewer` 更正為實際的 `aoccqa-quality-reviewer`;③ exporter 輸出格式描述由「XLSX／HTML」更正為「XLSX」(exporter 實際只產 xlsx)。
 - **v1.4.0**:定義儲存格內容換行格式——Test Case 一句一行;Steps／Expected Result 以 `1.` `2.` `3.` 一項一行(一句敘述完畢即換行、同號對齊);Test Data 每個資料項／子句一行(不用分號串行),`Data Set` 各組成行。
 - **v1.3.0**:全欄敘述改為**「真人實際操作」視角**(Steps 寫點選/查看位置、Expected 寫畫面應顯示的文字/提示/警語逐字);新增 **Test Data 延伸欄**規則(只取來源明確資料、日期 `YYYY/MM/DD`、商品 `角色=商品型態*數量`、Data Set 合併條件與拆案條件、`無特殊測試資料`);註明 exporter 目前留白 L 欄,需寫入時另調整。
 - **v1.2.0**:欄位規則改為 canonical 版,強化 **Steps ↔ Expected Result 一一呼應**(同號、數量對齊);補上 Test Case 不塞完整步驟、Steps 不重複 Pre-condition、每個 Step 必有對應 Expected、Expected 未確認標「待確認」不自行推測;加入「Steps↔Expected 呼應」撰寫示範(錯誤 vs 正確)。
