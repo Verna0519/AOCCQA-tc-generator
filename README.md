@@ -1,4 +1,4 @@
-# AOCCQA Skills
+# AOCCQA-tc-generator
 
 ASUS 內部電商平台（EC / Magento）QA 測試案例產線的 Claude skills。
 
