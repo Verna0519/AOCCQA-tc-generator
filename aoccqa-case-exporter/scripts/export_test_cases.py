@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AOCCQA-case-exporter  (v1.1.1 — keep in sync with SKILL.md metadata.version)
+AOCCQA-case-exporter  (v1.2.0 — keep in sync with SKILL.md metadata.version)
 
 Fill the AOCC QA xlsx template from:
   (1) a Jira ticket's fields  -> Report sheet + filename
@@ -48,6 +48,38 @@ CASE_COLS = {
 ILLEGAL_FILENAME = re.compile(r'[\\/:*?"<>|]')
 UAT_QA_TAG = re.compile(r'\[UAT-QA\]', flags=re.IGNORECASE)
 LEADING_TAG = re.compile(r'^\s*\[([^\]]+)\]\s*')   # e.g. "[EU] " -> "EU_"
+DATE_TOKEN = re.compile(r'(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})')  # YYYY/MM/DD, YYYY-MM-DD, YYYY.MM.DD
+
+
+def normalize_test_date(raw):
+    """
+    Normalize a free-form schedule string into the Report's Test date format:
+    ``YYYY/MM/DD-YYYY/MM/DD`` (earliest start ~ latest end), dropping wording
+    such as "Internal Testing" / "UAT". Deterministic: parses whatever dates
+    are literally present, never invents one.
+
+    Returns (value, note):
+      - value: normalized range, a single ``YYYY/MM/DD`` when only one distinct
+               date is present, the stripped raw text when no date parses
+               (so information is not silently lost), or "" for empty input.
+      - note:  None on a clean normalization; otherwise a short reason string
+               so the run report can flag it for a human to correct.
+    """
+    s = (raw or "").strip()
+    if not s:
+        return "", None
+    found = []
+    for y, m, d in DATE_TOKEN.findall(s):
+        try:
+            found.append(datetime(int(y), int(m), int(d)))
+        except ValueError:
+            pass  # e.g. 2026/13/40 — ignore impossible dates, never guess
+    if not found:
+        return s, "no parseable YYYY/MM/DD date; wrote raw text verbatim"
+    lo, hi = min(found), max(found)
+    if lo == hi:
+        return lo.strftime("%Y/%m/%d"), None
+    return f"{lo.strftime('%Y/%m/%d')}-{hi.strftime('%Y/%m/%d')}", None
 
 
 def clean_summary_to_filename(summary: str, today: str, module: str = "") -> str:
@@ -105,10 +137,9 @@ def write_report(ws, jira: dict):
     non-empty value is supplied; missing ones are left blank (never guessed).
     Returns a capture report listing captured vs blank for each dynamic field.
     """
-    # dynamic Jira-sourced fields: key -> (cell, human label)
+    # dynamic Jira-sourced fields written verbatim: key -> (cell, human label)
     dynamic = {
         "summary":          (REPORT_CELLS["summary"],          "Project (Summary)"),
-        "test_date":        (REPORT_CELLS["test_date"],        "Test date"),
         "link":             (REPORT_CELLS["link"],             "New feature & Release Note (link)"),
         "mcc":              (REPORT_CELLS["mcc"],              "Test Country (MCC#)"),
         "test_environment": (REPORT_CELLS["test_environment"], "Test Environment"),
@@ -125,13 +156,28 @@ def write_report(ws, jira: dict):
             ws[cell] = val
             captured.append({"field": label, "cell": cell, "value": val})
 
-    # Tester is derived, not raw: AOCC_<Assignee>. Blank assignee -> keep template default.
+    # Test date is normalized to YYYY/MM/DD-YYYY/MM/DD before writing (not verbatim).
+    td_cell = REPORT_CELLS["test_date"]
+    td_val, td_note = normalize_test_date(jira.get("test_date"))
+    if td_val:
+        entry = {"field": "Test date", "cell": td_cell, "value": td_val}
+        if td_note:
+            entry["note"] = td_note
+        ws[td_cell] = td_val
+        captured.append(entry)
+    else:
+        blank.append({"field": "Test date", "cell": td_cell})
+
+    # Tester is derived, not raw: AOCC_<Assignee>. No assignee -> clear the cell
+    # and report blank; never leave the template's pre-filled name on someone
+    # else's deliverable (keeping a stray name is itself a wrong guess).
     assignee = (jira.get("assignee") or "").strip()
     tester_cell = REPORT_CELLS["tester"]
     if assignee:
         ws[tester_cell] = f"AOCC_{assignee}"
         captured.append({"field": "Tester", "cell": tester_cell, "value": f"AOCC_{assignee}"})
     else:
+        ws[tester_cell] = None
         blank.append({"field": "Tester (no Assignee on ticket)", "cell": tester_cell})
 
     return captured, blank
@@ -192,6 +238,12 @@ def main():
     today = args.date or datetime.now().strftime("%Y%m%d")
 
     wb = openpyxl.load_workbook(args.template)
+    for required in ("Report", "Test case"):
+        if required not in wb.sheetnames:
+            sys.exit(
+                f"ERROR: template is missing the required '{required}' sheet. "
+                f"Found sheets: {wb.sheetnames}. Not building a substitute template."
+            )
     report_ws = wb["Report"]
     case_ws = wb["Test case"]
 

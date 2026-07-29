@@ -1,14 +1,14 @@
 ---
 name: aoccqa-tc-generator
 metadata:
-  version: 1.4.0
+  version: 1.4.1
 description: >
   用於 AOCCQA 測試案例產線 Phase B(案例起草)。當使用者已有「已確認需求」——
   來自 aoccqa-fsd-parser 的需求分析報告(六段 HTML)、Requirement Matrix、已確認業務規則
   ＋允許的假設,或直接貼上的確認清單——並希望據此「規劃覆蓋並產生可執行、可追溯、不重複的
   測試案例初稿」時,必須使用此 skill。輸出為固定 7 欄的 Test Case Draft
   (Test Case ID / Category / Feature / Pre-condition / Test Case / Steps / Expected Result),
-  預設為可複製的 Markdown 表格,供下游 aoccqa-testcase-reviewer 審查、aoccqa-case-exporter 匯出。
+  預設為可複製的 Markdown 表格,供下游 aoccqa-quality-reviewer 審查、aoccqa-case-exporter 匯出。
   只要對話出現「把這份需求變成測試案例」「幫我產測項/測試案例初稿」「規劃測試覆蓋」
   「這些規則要測哪些 case」「Requirement Matrix 轉 Test Case」「補齊正/負/邊界/狀態流轉覆蓋」
   等意圖,都應觸發,即使沒說出 "tc-generator" 這個字。此 skill 是「案例起草員」:負責產生＋自我標記,
@@ -21,7 +21,7 @@ description: >
 
 隸屬 Agent:`AOCCQA-testcase-drafter`(案例起草員)。把上游**已確認的需求**展開成一份**可執行、可追溯、不重複**的 Test Case Draft。把「測試設計」當主要工作 —— **不是**把每條需求逐字翻成一列表格。
 
-**上游**:`aoccqa-fsd-parser`(需求分析報告 / Requirement Matrix)。**下游**:`aoccqa-testcase-reviewer`(審查、刪重、補漏)→ `aoccqa-case-exporter`(輸出 XLSX／HTML)。
+**上游**:`aoccqa-fsd-parser`(需求分析報告 / Requirement Matrix)。**下游**:`aoccqa-quality-reviewer`(審查、刪重、補漏)→ `aoccqa-case-exporter`(輸出 XLSX／HTML)。
 
 **通用性**:與「哪個產品／哪份需求」無關;流程與 7 欄輸出結構固定;所有專有名詞(欄位、狀態、系統、product type、國家、API、Job 名)**一律取自當前這份需求**,不沿用其他文件或本 skill 範例的詞彙(範例僅示意寫法)。
 
@@ -49,7 +49,7 @@ description: >
 
 ### 讀既有 Test case 分頁(標準 ingest 規則)
 
-當輸入是**既有的 Test case 分頁／xlsx**(例如既有案例要對齊、比對用詞、或做 regression 沿用),**只抓 5 欄**:`Category`、`Pre-condition`、`Test case`、`Steps`、`Expected result`。其餘欄一律略過:`Test Case ID`、`Feature`、`Device`、`Browser`、`Test result`、`Note`、`Test Data`。這與下游 `case-exporter` 的 5 欄寫入規則對稱(讀 5 欄、寫 5 欄;ID 由 exporter 順編、Feature 捨棄)。
+當輸入是**既有的 Test case 分頁／xlsx**(例如既有案例要對齊、比對用詞、或做 regression 沿用),**只抓 5 個內容欄**:`Category`、`Pre-condition`、`Test case`、`Steps`、`Expected result`。其餘欄一律略過:`Test Case ID`、`Feature`、`Device`、`Browser`、`Test result`、`Note`、`Test Data`。這對應下游 `case-exporter` 的寫入分工——內容欄同樣是這 5 欄,`Feature` 捨棄不寫;差別在 exporter 另會寫 `Test Case ID`(A 欄,沿用來源、缺才順編)並於有值時寫 `Test Data`(L 欄)。
 
 - 讀實體 xlsx 時,先用 `xlsx` skill 開檔,定位 Test case 分頁與標題列,再依標題名對映上述 5 欄(容忍大小寫/全半形/空白差異,如 `Test case`＝`Test Case`、`Expected result`＝`Expected Result`)。
 - 保留每列原文與順序,不改寫、不刪除(這是既有案例,屬使用者保護內容)。
@@ -150,7 +150,7 @@ description: >
 - 不需特定資料時填 `無特殊測試資料`。
 - 日期一律 `YYYY/MM/DD`;商品組合一律 `角色=商品型態*數量` 格式。
 - **格式**:**每個資料項／子句換行(一行一項)**,不用分號把多項串在同一行;`Data Set` 標題與各組資料各自成行。
-- **與 exporter 的關係**:`case-exporter` 目前把模板 `Test Data`(L 欄)留白、且讀取只取 5 欄。若要把 Test Data 寫進 xlsx,需調整 exporter 讓其接受並寫入 L 欄(預設仍不動)。
+- **與 exporter 的關係**:`case-exporter`(v1.1.0+)**已支援** `Test Data` 條件寫入模板 L 欄——input 的該 case 有非空 `test_data` 就寫、沒有就留白,絕不代為產生。因此草稿只要把 Test Data 依本節格式備妥,匯出即會自動落在 L 欄,無需再改 exporter。
 
 #### 撰寫示範:Steps ↔ Expected 一一呼應
 
@@ -183,7 +183,7 @@ description: >
 
 **在聊天畫面直接呈現完整 7 欄的可複製 Markdown 表格**(多步儲存格用編號行或 `<br>` 讓目的地可讀),供人閱讀、reviewer 審查與追溯。除非使用者要別的格式。
 
-**與 `case-exporter` 的欄位分工**:套模板匯出是 `case-exporter` 的事,它實際只抓 5 欄——`Category`、`Pre-condition`、`Test Case`、`Steps`、`Expected Result`。`Test Case ID` 由 exporter 自動順編(草稿仍保留,供排序與「承上 Test Case ID」引用);`Feature` 供 reviewer 判讀決定性組合,exporter 寫入時捨棄。因此**草稿一律保留完整 7 欄,不可為了配合 exporter 而刪欄**;本 skill 不自行套模板或匯出。
+**與 `case-exporter` 的欄位分工**:套模板匯出是 `case-exporter` 的事。內容欄它寫 5 欄——`Category`、`Pre-condition`、`Test Case`、`Steps`、`Expected Result`;另寫 `Test Case ID`(A 欄,**沿用草稿來源 ID、缺才自 1 順編**,草稿仍保留供排序與「承上 Test Case ID」引用)與選填 `Test Data`(L 欄,有值才寫)。`Feature` 供 reviewer 判讀決定性組合,exporter 寫入時捨棄。因此**草稿一律保留完整 7 欄(＋選填 Test Data),不可為了配合 exporter 而刪欄**;本 skill 不自行套模板或匯出。
 
 回傳:
 
@@ -202,7 +202,7 @@ description: >
 
 ## 產出前自我檢查
 
-1. 聊天呈現完整 7 欄、欄名/欄序未改;已註明 exporter 只抓 `Category`/`Pre-condition`/`Test Case`/`Steps`/`Expected Result` 5 欄,ID 與 Feature 不因此刪除。
+1. 聊天呈現完整 7 欄、欄名/欄序未改;已註明 exporter 內容欄寫 `Category`/`Pre-condition`/`Test Case`/`Steps`/`Expected Result` 5 欄,另寫 ID(A)與選填 Test Data(L)、捨棄 Feature,故 ID 與 Feature 不因對應而從草稿刪除。
 2. Test Case ID 補零、無 `TC`/`CASE` 前綴、排序後已重編。
 3. 專有名詞全取自當前需求、未沿用其他文件範例。
 4. Pre-condition 不含本測試動作;無條件寫 `(1) 無特殊前置條件`;承上寫法只在必要時用。
@@ -213,6 +213,7 @@ description: >
 
 ## 版本紀錄
 
+- **v1.4.1**:文件校正(行為不變)——① 修正對 `case-exporter` 的過時描述:exporter v1.1.0+ **已支援** `Test Data` 條件寫入 L 欄(舊文誤稱「留白、需另調整」),且 exporter 除 5 個內容欄外還會寫 `Test Case ID`(A,沿用來源、缺才順編)(舊文誤稱「只抓 5 欄、ID 由 exporter 自動順編」);② 下游 reviewer 名稱由 `aoccqa-testcase-reviewer` 更正為實際的 `aoccqa-quality-reviewer`。
 - **v1.4.0**:定義儲存格內容換行格式——Test Case 一句一行;Steps／Expected Result 以 `1.` `2.` `3.` 一項一行(一句敘述完畢即換行、同號對齊);Test Data 每個資料項／子句一行(不用分號串行),`Data Set` 各組成行。
 - **v1.3.0**:全欄敘述改為**「真人實際操作」視角**(Steps 寫點選/查看位置、Expected 寫畫面應顯示的文字/提示/警語逐字);新增 **Test Data 延伸欄**規則(只取來源明確資料、日期 `YYYY/MM/DD`、商品 `角色=商品型態*數量`、Data Set 合併條件與拆案條件、`無特殊測試資料`);註明 exporter 目前留白 L 欄,需寫入時另調整。
 - **v1.2.0**:欄位規則改為 canonical 版,強化 **Steps ↔ Expected Result 一一呼應**(同號、數量對齊);補上 Test Case 不塞完整步驟、Steps 不重複 Pre-condition、每個 Step 必有對應 Expected、Expected 未確認標「待確認」不自行推測;加入「Steps↔Expected 呼應」撰寫示範(錯誤 vs 正確)。
