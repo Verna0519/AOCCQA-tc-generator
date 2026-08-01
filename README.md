@@ -40,6 +40,17 @@ Test Case ID | Category | Feature | Pre-condition | Test Case | Steps | Expected
 
 外加一個選填的延伸欄 `Test Data`（不屬鎖定 7 欄）。
 
+## 版本與發佈分支
+
+- `main`：最新開發狀態，隨時可安裝使用。
+- `release/vX.Y.Z`：對應 `aoccqa-tc-generator` 版本的**具名快照**，用來釘住並確認某一版交付內容；建立後不再改動。
+
+| 分支 | 對應版本 | 內含 | 說明 |
+|---|---|---|---|
+| `release/v1.4.1` | tc-generator v1.4.1 + case-exporter v1.2.0 | 目前 = `main` HEAD | 可確認的版本快照 |
+
+版本號的單一事實來源仍是各 `SKILL.md`；`release/*` 分支只是把某個時間點的 `main` 釘成可回溯的參照。
+
 **匯出時的欄位分工**（`case-exporter` 實際行為）：
 
 - 內容欄寫入 5 欄 → `Category`、`Pre-condition`、`Test Case`、`Steps`、`Expected Result`。
@@ -79,3 +90,4 @@ python aoccqa-case-exporter/scripts/export_test_cases.py \
 - 每次產生或更新 skill 都在 frontmatter 帶 `metadata.version`，並於內文「版本紀錄」補一筆。
 - `SKILL.md` 內文採 caveman 壓縮以降低載入 token；安全／停止條件維持完整清楚句子，不做 fragment 化。
 - `assets/` 內的 `.xlsx` 模板為二進位交付物，請勿在文字編輯器改動。
+- 要釘住某一版交付時，從當下 `main` 建立 `release/vX.Y.Z`（版本號取 `aoccqa-tc-generator`），建立後不再改動。
