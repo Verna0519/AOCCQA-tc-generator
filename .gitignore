@@ -13,6 +13,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Claude Code local settings (machine-specific; keep shared settings.json tracked)
+.claude/settings.local.json
+
 # Excel temp lock files
 ~$*.xlsx
 
